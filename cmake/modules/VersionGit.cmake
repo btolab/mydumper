@@ -1,0 +1,37 @@
+find_program(GIT git)
+if(GIT)
+    execute_process(
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      COMMAND ${GIT} describe --tags --match=v* --dirty --long
+      OUTPUT_VARIABLE GIT_DESCRIBE OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    message(STATUS "Git describe: ${GIT_DESCRIBE}")
+    string(REPLACE "-" " " GIT_VERSION "${GIT_DESCRIBE}")
+    separate_arguments(GIT_VERSION)
+    list(LENGTH GIT_VERSION GIT_VERSION_LEN)
+    list(GET GIT_VERSION 0 GIT_TAG)
+    list(GET GIT_VERSION 1 GIT_RELEASE)
+    list(GET GIT_VERSION 2 GIT_COMMIT)
+    math(EXPR GIT_RELEASE "${GIT_RELEASE}+1")
+    math(EXPR GIT_VERSION_LEN "${GIT_VERSION_LEN}-1")
+    list(GET GIT_VERSION ${GIT_VERSION_LEN} GIT_VERSION_LAST)
+    if("${GIT_VERSION_LAST}" STREQUAL "dirty")
+      set(GIT_DIRTY TRUE)
+      set(GIT_RELEASE "${GIT_RELEASE}.dirty")
+    endif("${GIT_VERSION_LAST}" STREQUAL "dirty")
+    execute_process(
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      COMMAND ${GIT} config --get user.email
+      OUTPUT_VARIABLE GIT_USER_EMAIL OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    execute_process(
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      COMMAND ${GIT} config --get user.name
+      OUTPUT_VARIABLE GIT_USER_NAME OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    set(FOUND_GIT TRUE)
+else(GIT)
+    set(FOUND_GIT FALSE)
+endif(GIT)
+
+mark_as_advanced(FOUND_GIT GIT_TAG GIT_RELEASE GIT_COMMIT GIT_USER_EMAIL GIT_USER_NAME GIT_DIRTY)
